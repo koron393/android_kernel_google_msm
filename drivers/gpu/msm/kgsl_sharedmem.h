@@ -263,6 +263,11 @@ kgsl_allocate(struct kgsl_memdesc *memdesc,
 	ret = kgsl_sharedmem_page_alloc(memdesc, pagetable, size);
 	if (ret)
 		return ret;
+	ret = kgsl_mmu_get_gpuaddr(pagetable, memdesc);
+	if (ret) {
+		kgsl_sharedmem_free(memdesc);
+		return ret;
+	}
 	ret = kgsl_mmu_map(pagetable, memdesc);
 	if (ret)
 		kgsl_sharedmem_free(memdesc);
@@ -300,4 +305,15 @@ kgsl_allocate_contiguous(struct kgsl_memdesc *memdesc, size_t size)
 	return ret;
 }
 
+static inline int kgsl_sg_size(struct scatterlist *sg, int sglen)
+{
+	int i, size = 0;
+	struct scatterlist *s;
+
+	for_each_sg(sg, s, sglen, i) {
+		size += s->length;
+	}
+
+	return size;
+}
 #endif /* __KGSL_SHAREDMEM_H */

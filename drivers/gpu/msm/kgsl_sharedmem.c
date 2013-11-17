@@ -65,6 +65,14 @@ struct mem_entry_stats {
 		mem_entry_max_show), \
 }
 
+
+/*
+ * One page allocation for a guard region to protect against over-zealous
+ * GPU pre-fetch
+ */
+
+static struct page *kgsl_guard_page;
+
 /**
  * Given a kobj, find the process structure attached to it
  */
@@ -385,6 +393,10 @@ static void kgsl_page_alloc_free(struct kgsl_memdesc *memdesc)
 	struct scatterlist *sg;
 	int sglen = memdesc->sglen;
 
+	/* Don't free the guard page if it was used */
+	if (memdesc->priv & KGSL_MEMDESC_GUARD_PAGE)
+		sglen--;
+
 	kgsl_driver.stats.page_alloc -= memdesc->size;
 
 	if (memdesc->hostptr) {
@@ -421,6 +433,10 @@ static int kgsl_page_alloc_map_kernel(struct kgsl_memdesc *memdesc)
 		int npages = PAGE_ALIGN(memdesc->size) >> PAGE_SHIFT;
 		int sglen = memdesc->sglen;
 		int i, count = 0;
+
+		/* Don't map the guard page if it exists */
+		if (memdesc->priv & KGSL_MEMDESC_GUARD_PAGE)
+			sglen--;
 
 		/* create a list of pages to call vmap */
 		pages = vmalloc(npages * sizeof(struct page *));
@@ -579,39 +595,47 @@ _kgsl_sharedmem_page_alloc(struct kgsl_memdesc *memdesc,
 
 	sglen_alloc = PAGE_ALIGN(size) >> PAGE_SHIFT;
 
+	/*
+	 * Add guard page to the end of the allocation when the
+	 * IOMMU is in use.
+	 */
+
+	if (kgsl_mmu_get_mmutype() == KGSL_MMU_TYPE_IOMMU)
+		sglen_alloc++;
+
 	memdesc->size = size;
 	memdesc->pagetable = pagetable;
 	memdesc->ops = &kgsl_page_alloc_ops;
 
-	memdesc->sg = kgsl_sg_alloc(sglen_alloc);
+	memdesc->sglen_alloc = sglen_alloc;
+	memdesc->sg = kgsl_sg_alloc(memdesc->sglen_alloc);
 
 	if (memdesc->sg == NULL) {
-		KGSL_CORE_ERR("vmalloc(%d) failed\n",
-			sglen_alloc * sizeof(struct scatterlist));
 		ret = -ENOMEM;
 		goto done;
 	}
 
 	/*
 	 * Allocate space to store the list of pages to send to vmap.
-	 * This is an array of pointers so we can track 1024 pages per page of
-	 * allocation which means we can handle up to a 8MB buffer request with
-	 * two pages; well within the acceptable limits for using kmalloc.
+	 * This is an array of pointers so we can track 1024 pages per page
+	 * of allocation.  Since allocations can be as large as the user dares,
+	 * we have to use the kmalloc/vmalloc trick here to make sure we can
+	 * get the memory we need.
 	 */
 
-	pages = kmalloc(sglen_alloc * sizeof(struct page *), GFP_KERNEL);
+	if ((memdesc->sglen_alloc * sizeof(struct page *)) > PAGE_SIZE)
+		pages = vmalloc(memdesc->sglen_alloc * sizeof(struct page *));
+	else
+		pages = kmalloc(PAGE_SIZE, GFP_KERNEL);
 
 	if (pages == NULL) {
-		KGSL_CORE_ERR("kmalloc (%d) failed\n",
-			sglen_alloc * sizeof(struct page *));
 		ret = -ENOMEM;
 		goto done;
 	}
 
 	kmemleak_not_leak(memdesc->sg);
 
-	memdesc->sglen_alloc = sglen_alloc;
-	sg_init_table(memdesc->sg, sglen_alloc);
+	sg_init_table(memdesc->sg, memdesc->sglen_alloc);
 
 	len = size;
 
@@ -632,7 +656,7 @@ _kgsl_sharedmem_page_alloc(struct kgsl_memdesc *memdesc,
 			gfp_mask |= __GFP_COMP | __GFP_NORETRY |
 				__GFP_NO_KSWAPD | __GFP_NOWARN;
 		else
-			gfp_mask |= GFP_KERNEL | __GFP_NORETRY;
+			gfp_mask |= GFP_KERNEL;
 
 		page = alloc_pages(gfp_mask, get_order(page_size));
 
@@ -655,6 +679,26 @@ _kgsl_sharedmem_page_alloc(struct kgsl_memdesc *memdesc,
 
 		sg_set_page(&memdesc->sg[sglen++], page, page_size, 0);
 		len -= page_size;
+	}
+
+	/* Add the guard page to the end of the sglist */
+
+	if (kgsl_mmu_get_mmutype() == KGSL_MMU_TYPE_IOMMU) {
+		/*
+		 * It doesn't matter if we use GFP_ZERO here, this never
+		 * gets mapped, and we only allocate it once in the life
+		 * of the system
+		 */
+
+		if (kgsl_guard_page == NULL)
+			kgsl_guard_page = alloc_page(GFP_KERNEL | __GFP_ZERO |
+				__GFP_HIGHMEM);
+
+		if (kgsl_guard_page != NULL) {
+			sg_set_page(&memdesc->sg[sglen++], kgsl_guard_page,
+				PAGE_SIZE, 0);
+			memdesc->priv |= KGSL_MEMDESC_GUARD_PAGE;
+		}
 	}
 
 	memdesc->sglen = sglen;
@@ -707,7 +751,10 @@ _kgsl_sharedmem_page_alloc(struct kgsl_memdesc *memdesc,
 		kgsl_driver.stats.histogram[order]++;
 
 done:
-	kfree(pages);
+	if ((memdesc->sglen_alloc * sizeof(struct page *)) > PAGE_SIZE)
+		vfree(pages);
+	else
+		kfree(pages);
 
 	if (ret)
 		kgsl_sharedmem_free(memdesc);
@@ -782,8 +829,10 @@ void kgsl_sharedmem_free(struct kgsl_memdesc *memdesc)
 	if (memdesc == NULL || memdesc->size == 0)
 		return;
 
-	if (memdesc->gpuaddr)
+	if (memdesc->gpuaddr) {
 		kgsl_mmu_unmap(memdesc->pagetable, memdesc);
+		kgsl_mmu_put_gpuaddr(memdesc->pagetable, memdesc);
+	}
 
 	if (memdesc->ops && memdesc->ops->free)
 		memdesc->ops->free(memdesc);

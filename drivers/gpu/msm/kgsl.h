@@ -137,7 +137,6 @@ extern struct kgsl_driver kgsl_driver;
 
 struct kgsl_pagetable;
 struct kgsl_memdesc;
-struct kgsl_cmdbatch;
 
 struct kgsl_memdesc_ops {
 	int (*vmflags)(struct kgsl_memdesc *);
@@ -153,6 +152,8 @@ struct kgsl_memdesc_ops {
 #define KGSL_MEMDESC_GLOBAL BIT(1)
 /* The memdesc is frozen during a snapshot */
 #define KGSL_MEMDESC_FROZEN BIT(2)
+/* The memdesc is mapped into a pagetable */
+#define KGSL_MEMDESC_MAPPED BIT(3)
 
 /* shared memory allocation */
 struct kgsl_memdesc {
@@ -190,6 +191,8 @@ struct kgsl_mem_entry {
 	/* back pointer to private structure under whose context this
 	* allocation is made */
 	struct kgsl_process_private *priv;
+	/* Initialized to 0, set to 1 when entry is marked for freeing */
+	int pending_free;
 };
 
 #ifdef CONFIG_MSM_KGSL_MMU_PAGE_FAULT
@@ -228,14 +231,6 @@ int kgsl_resume_driver(struct platform_device *pdev);
 void kgsl_early_suspend_driver(struct early_suspend *h);
 void kgsl_late_resume_driver(struct early_suspend *h);
 
-void kgsl_trace_regwrite(struct kgsl_device *device, unsigned int offset,
-		unsigned int value);
-
-void kgsl_trace_issueibcmds(struct kgsl_device *device, int id,
-		struct kgsl_cmdbatch *cmdbatch,
-		unsigned int timestamp, unsigned int flags,
-		int result, unsigned int type);
-
 #ifdef CONFIG_MSM_KGSL_DRM
 extern int kgsl_drm_init(struct platform_device *dev);
 extern void kgsl_drm_exit(void);
@@ -253,10 +248,6 @@ static inline void kgsl_drm_exit(void)
 static inline int kgsl_gpuaddr_in_memdesc(const struct kgsl_memdesc *memdesc,
 				unsigned int gpuaddr, unsigned int size)
 {
-	/* set a minimum size to search for */
-	if (!size)
-		size = 1;
-
 	/* don't overflow */
 	if ((gpuaddr + size) < gpuaddr)
 		return 0;
