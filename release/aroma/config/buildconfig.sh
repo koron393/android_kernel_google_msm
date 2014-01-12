@@ -3,6 +3,34 @@
 #Build config file
 CONFIGFILE="/tmp/settings.conf"
 
+#MINFREQ
+MINF=`cat /tmp/aroma/minfreq.prop | cut -d '=' -f2`
+echo -e "\n\n##### Minimum frequency #####\n# 1 162 MHz" >> $CONFIGFILE
+echo -e "\n# 2 270 MHz\n# 3 384 MHz (stock)\n# 4 594 MHz\n# 5 810 MHz\n" >> $CONFIGFILE
+if [ $MINF = 2 ]; then
+  echo "MINF=2" >> $CONFIGFILE;
+elif [ $MINF = 3 ]; then
+  echo "MINF=3" >> $CONFIGFILE;
+elif [ $MINF = 4 ]; then
+  echo "MINF=4" >> $CONFIGFILE;
+elif [ $MINF = 5 ]; then
+  echo "MINF=5" >> $CONFIGFILE;
+else
+  echo "MINF=1" >> $CONFIGFILE;
+fi
+
+#HOTPLUGDRV
+HOTPLUGDRV=`cat /tmp/aroma/hotplug.prop | cut -d '=' -f2`
+echo -e "\n\n##### Hotplug driver Settings #####\n# 0 to enable qualcomm mpdecision (stock)" >> $CONFIGFILE
+echo -e "# 1 to enable msm_mpdecision (recommended)\n# 2 to enable intelli-plug\n" >> $CONFIGFILE
+if [ $HOTPLUGDRV = 2 ]; then
+  echo "HOTPLUGDRV=1" >> $CONFIGFILE;
+elif [ $HOTPLUGDRV = 3 ]; then
+  echo "HOTPLUGDRV=2" >> $CONFIGFILE;
+else
+  echo "HOTPLUGDRV=0" >> $CONFIGFILE;
+fi
+
 #S2W
 S2W=`grep "item.0.1" /tmp/aroma/mods.prop | cut -d '=' -f2`
 S2S=`grep "item.0.2" /tmp/aroma/mods.prop | cut -d '=' -f2`
@@ -77,6 +105,26 @@ else
   echo "OTGCM=0" >> $CONFIGFILE;
 fi
 
+#Input-boost
+INPUTBOOST=`grep "item.0.8" /tmp/aroma/mods.prop | cut -d '=' -f2`
+echo -e "\n\n##### Input-booster Settings ######\n# 1 to enable Input-boost\n# 0 to disable Input-boost\n" >> $CONFIGFILE
+if [ $HOTPLUGDRV = 1 ]; then
+  echo "INPUTBOOST=0" >> $CONFIGFILE;
+elif [ $INPUTBOOST = 1 ]; then
+  echo "INPUTBOOST=1" >> $CONFIGFILE;
+else
+  echo "INPUTBOOST=0" >> $CONFIGFILE;
+fi
+
+#Gentle Fair Sleepers
+GFSLEEPERS=`grep "item.0.9" /tmp/aroma/mods.prop | cut -d '=' -f2`
+echo -e "\n\n##### Gentle Fair Sleepers Settings ######\n# 1 to enable\n# 0 to disable\n" >> $CONFIGFILE
+if [ $GFSLEEPERS = 1 ]; then
+  echo "GFSLEEPERS=1" >> $CONFIGFILE;
+else
+  echo "GFSLEEPERS=0" >> $CONFIGFILE;
+fi
+
 #THERMAL
 THERM=`cat /tmp/aroma/thermal.prop | cut -d '=' -f2`
 echo -e "\n\n##### Thermal Settings #####\n# 0 for default thermal throttling" >> $CONFIGFILE
@@ -89,14 +137,54 @@ else
   echo "THERM=0" >> $CONFIGFILE;
 fi
 
+#GPU Clock
+GPU_OC=`cat /tmp/aroma/gpuclock.prop | cut -d '=' -f2`
+echo -e "\n\n##### Max GPU Clock #####\n# 1 320 MHz" >> $CONFIGFILE
+echo -e "\n# 2 400 MHz\n# 3 450 MHz\n# 4 504MHz\n# 5 545 MHz\n# 6 600 MHz\n# 7 627 MHz\n" >> $CONFIGFILE
+if [ $GPU_OC = 1 ]; then
+  echo "GPU_OC=1" >> $CONFIGFILE;
+elif [ $GPU_OC = 3 ]; then
+  echo "GPU_OC=3" >> $CONFIGFILE;
+elif [ $GPU_OC = 4 ]; then
+  echo "GPU_OC=4" >> $CONFIGFILE;
+elif [ $GPU_OC = 5 ]; then
+  echo "GPU_OC=5" >> $CONFIGFILE;
+elif [ $GPU_OC = 6 ]; then
+  echo "GPU_OC=6" >> $CONFIGFILE;
+elif [ $GPU_OC = 7 ]; then
+  echo "GPU_OC=7" >> $CONFIGFILE;
+else
+  echo "GPU_OC=2" >> $CONFIGFILE;
+fi
+
 #GPU Governor
 GPU_GOV=`cat /tmp/aroma/gpugov.prop | cut -d '=' -f2`
 echo -e "\n\n##### GPU Governor #####\n# 1 Ondemand (default)" >> $CONFIGFILE
-echo -e "\n# 2 Simple\n# 3 Performance\n" >> $CONFIGFILE
+echo -e "\n# 2 Interactive\n# 3 Performance\n" >> $CONFIGFILE
 if [ $GPU_GOV = 2 ]; then
   echo "GPU_GOV=2" >> $CONFIGFILE;
 else
   echo "GPU_GOV=1" >> $CONFIGFILE;
+fi
+
+#GPU UV
+GPU_UV=`cat /tmp/aroma/gpuuv.prop | cut -d '=' -f2`
+echo -e "\n\n##### GPU Undervolting #####\n# 1 Stock\n# 2 -25mV" >> $CONFIGFILE
+echo -e "\n# 3 -50mV\n# 4 -75mV\n# 5 -100mV\n# 6 -125mV\n# 7 -150mV\n" >> $CONFIGFILE
+if [ $GPU_UV = 2 ]; then
+  echo "GPU_UV=2" >> $CONFIGFILE;
+elif [ $GPU_UV = 3 ]; then
+  echo "GPU_UV=3" >> $CONFIGFILE;
+elif [ $GPU_UV = 4 ]; then
+  echo "GPU_UV=4" >> $CONFIGFILE;
+elif [ $GPU_UV = 5 ]; then
+  echo "GPU_UV=5" >> $CONFIGFILE;
+elif [ $GPU_UV = 6 ]; then
+  echo "GPU_UV=6" >> $CONFIGFILE;
+elif [ $GPU_UV = 7 ]; then
+  echo "GPU_UV=7" >> $CONFIGFILE;
+else
+  echo "GPU_UV=1" >> $CONFIGFILE;
 fi
 
 #Battery life extender

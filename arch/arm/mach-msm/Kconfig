@@ -1656,6 +1656,13 @@ config CPU_VOLTAGE_TABLE
 	help
 	  Krait User Votlage Control 
 
+config GPU_VOLTAGE_TABLE
+	bool "Enable GPU Voltage Table via sysfs for adjustements"
+	depends on CPU_VOLTAGE_TABLE
+	default n
+	help
+	  Adreno GPU User Voltage Control 
+
 config MSM_AVS_HW
 	bool "Enable Adaptive Voltage Scaling (AVS)"
 	default n
@@ -2651,5 +2658,17 @@ config FORCE_FAST_CHARGE
 	help
 	  A simple sysfs interface to force adapters that
 	  are detected as USB to charge as AC.
+
+config UPDATE_LCDC_LUT
+	bool "Set initial Qualcomm LCDC lut"
+	default y
+	help
+	  Set initial Qualcomm LCDC Look Up Table.
+
+config LCD_KCAL
+	tristate "MSM generic LCDC Calibration"
+	default y
+	help
+	  Enable MSM generic LCDC temperature Calibration.
 
 endif
