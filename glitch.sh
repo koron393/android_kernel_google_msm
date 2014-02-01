@@ -84,7 +84,7 @@ cd release/aroma
 mkdir -p $KERNEL_DIR/release/Flashable-flo-AOSP4CM
 REL=Glitch-N7-r$counter-CM11.XP.zip
 
-	zip -q -r ${REL} boot config META-INF system
+	zip -q -r ${REL} boot config META-INF qo_db system
 	#sha256sum ${REL} > ${REL}.sha256sum
 	mv ${REL}* $KERNEL_DIR/release/Flashable-flo-AOSP4CM/
 
