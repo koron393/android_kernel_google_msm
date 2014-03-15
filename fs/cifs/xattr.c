@@ -36,8 +36,10 @@
 #define CIFS_XATTR_OS2_PREFIX "os2."
 #define CIFS_XATTR_SECURITY_PREFIX "security."
 #define CIFS_XATTR_TRUSTED_PREFIX "trusted."
+/* defined in security.h
 #define XATTR_TRUSTED_PREFIX_LEN  8
 #define XATTR_SECURITY_PREFIX_LEN 9
+*/
 /* BB need to add server (Samba e.g) support for security and trusted prefix */
 
 
