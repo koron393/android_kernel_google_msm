@@ -1,6 +1,7 @@
 #
 # Makefile for ALSA
 #
+KBUILD_CFLAGS += -Wno-uninitialized
 
 snd-usb-audio-objs := 	card.o \
 			clock.o \
