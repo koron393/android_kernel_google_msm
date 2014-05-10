@@ -4,7 +4,7 @@
 # 2 Sep 2000, Christoph Hellwig <hch@infradead.org>
 # Rewritten to use lists instead of if-statements.
 #
-KBUILD_CFLAGS += -Wno-uninitialized
+EXTRA_CFLAGS += -Wno-uninitialized
 
 obj-y	:= nonet.o
 
