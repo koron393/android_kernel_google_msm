@@ -191,7 +191,7 @@ static ssize_t show_temp(struct device *dev,
 	return tdata->valid ? sprintf(buf, "%d\n", tdata->temp) : -EAGAIN;
 }
 
-static int adjust_tjmax(struct cpuinfo_x86 *c, u32 id,
+static int __cpuinit adjust_tjmax(struct cpuinfo_x86 *c, u32 id,
 				  struct device *dev)
 {
 	/* The 100C is default for both mobile and non mobile CPUs */
