@@ -1760,7 +1760,7 @@ static int elan_ktf3k_ts_resume(struct i2c_client *client)
 {
 
 	int rc = 0, retry = 5;
-	struct elan_ktf3k_ts_data *ts = i2c_get_clientdata(client);
+	//struct elan_ktf3k_ts_data *ts = i2c_get_clientdata(client);
       //int delay_time;
 #ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
 #if defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE) || defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE)
