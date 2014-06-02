@@ -984,5 +984,11 @@ config TOUCHSCREEN_CHARGER_NOTIFY
 	  The touch firmware will use this information to decide whether
 	  a new algorithm to reduce the noise impact needs to be applied
 	  or not.
-endif
 
+config WAKE_TIMEOUT
+	tristate "Disable screen wake functions after timeout"
+	default y
+	help
+	  Disable screen wake functions after timeout
+
+endif
