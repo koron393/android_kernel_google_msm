@@ -24,6 +24,9 @@ AFLAGS_misc.o +=-Wa,-march=armv7-a$(plus_sec)
 MISC = misc.o
 
 AFLAGS_decompress.o += -Wa,-march=armv7-a$(plus_sec)
+ifeq ($(CONFIG_KERNEL_LZ4),y)
+CFLAGS_decompress.o := -Os
+endif
 DECOMPRESS = decompress.o
 
 FONTC	= $(srctree)/drivers/video/console/font_acorn_8x8.c
@@ -100,6 +103,7 @@ suffix_$(CONFIG_KERNEL_GZIP) = gzip
 suffix_$(CONFIG_KERNEL_LZO)  = lzo
 suffix_$(CONFIG_KERNEL_LZMA) = lzma
 suffix_$(CONFIG_KERNEL_XZ)   = xzkern
+suffix_$(CONFIG_KERNEL_LZ4)  = lz4
 
 # Borrowed libfdt files for the ATAG compatibility mode
 
