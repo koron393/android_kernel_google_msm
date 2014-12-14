@@ -45,7 +45,7 @@
 #define PACKET_SIZE		40
 #define NEW_PACKET_SIZE 55
 #define FINGER_NUM		10
-		
+
 #define PWR_STATE_DEEP_SLEEP	0
 #define PWR_STATE_NORMAL		1
 #define PWR_NORMAL_STATE 8
@@ -219,7 +219,7 @@ static int dt2w_changed = 0;
 static int s2w_switch = 15;
 static int s2w_switch_temp = 15;
 static int s2w_changed = 0;
-static int s2s_switch = 1;
+static int s2s_switch = 0;
 
 static int s2w_begin_v = 150;
 static int s2w_end_v = 1200;
