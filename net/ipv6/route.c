@@ -618,11 +618,6 @@ int rt6_route_rcv(struct net_device *dev, u8 *opt, int len,
 
 	rt = rt6_get_route_info(dev, prefix, rinfo->prefix_len, gwaddr);
 
-	if (rt && !lifetime) {
-		ip6_del_rt(rt);
-		rt = NULL;
-	}
-
 	if (!rt && lifetime)
 		rt = rt6_add_route_info(dev, prefix, rinfo->prefix_len, gwaddr, pref);
 	else if (rt)
