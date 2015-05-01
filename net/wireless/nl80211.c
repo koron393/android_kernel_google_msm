@@ -5433,7 +5433,6 @@ static int nl80211_testmode_dump(struct sk_buff *skb,
 	cfg80211_unlock_rdev(rdev);
 	return err;
 }
-
 #endif
 
 static int nl80211_connect(struct sk_buff *skb, struct genl_info *info)
