@@ -664,7 +664,7 @@ static void tsens_scheduler_fn(struct work_struct *work)
 			lower_thr = true;
 		}
 		if (upper_thr || lower_thr) {
-			unsigned long temp;
+			unsigned long temp = 0;
 			enum thermal_trip_type trip =
 					THERMAL_TRIP_CONFIGURABLE_LOW;
 
