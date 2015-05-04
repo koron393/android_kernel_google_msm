@@ -77,18 +77,6 @@ static inline u64 get_cpu_idle_time_jiffy(unsigned int cpu, u64 *wall)
 	return jiffies_to_usecs(idle_time);
 }
 
-static inline cputime64_t get_cpu_idle_time(unsigned int cpu, cputime64_t *wall)
-{
-	u64 idle_time = get_cpu_idle_time_us(cpu, NULL);
-
-	if (idle_time == -1ULL)
-		return get_cpu_idle_time_jiffy(cpu, wall);
-	else
-		idle_time += get_cpu_iowait_time_us(cpu, wall);
-
-	return idle_time;
-}
-
 static inline cputime64_t get_cpu_iowait_time(unsigned int cpu,
 							cputime64_t *wall)
 {
@@ -102,13 +90,18 @@ static inline cputime64_t get_cpu_iowait_time(unsigned int cpu,
 
 static int update_average_load(unsigned int freq, unsigned int cpu)
 {
-
-	struct cpu_load_data *pcpu = &per_cpu(cpuload, cpu);
-	cputime64_t cur_wall_time, cur_idle_time, cur_iowait_time;
+	int ret;
 	unsigned int idle_time, wall_time, iowait_time;
 	unsigned int cur_load, load_at_max_freq;
+	cputime64_t cur_wall_time, cur_idle_time, cur_iowait_time;
+	struct cpu_load_data *pcpu = &per_cpu(cpuload, cpu);
+	struct cpufreq_policy policy;
 
-	cur_idle_time = get_cpu_idle_time(cpu, &cur_wall_time);
+        ret = cpufreq_get_policy(&policy, cpu);
+        if (ret)
+                return -EINVAL;
+
+	cur_idle_time = get_cpu_idle_time(cpu, &cur_wall_time, 0);
 	cur_iowait_time = get_cpu_iowait_time(cpu, &cur_wall_time);
 
 	wall_time = (unsigned int) (cur_wall_time - pcpu->prev_cpu_wall);
@@ -123,13 +116,13 @@ static int update_average_load(unsigned int freq, unsigned int cpu)
 	if (idle_time >= iowait_time)
 		idle_time -= iowait_time;
 
-	if (unlikely(!wall_time || wall_time < idle_time))
+	if (unlikely(wall_time <= 0 || wall_time < idle_time))
 		return 0;
 
 	cur_load = 100 * (wall_time - idle_time) / wall_time;
 
 	/* Calculate the scaled load across CPU */
-	load_at_max_freq = (cur_load * freq) / pcpu->policy_max;
+	load_at_max_freq = (cur_load * policy.cur) / policy.max;
 
 	if (!pcpu->avg_load_maxfreq) {
 		/* This is the first sample in this window*/
