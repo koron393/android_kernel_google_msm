@@ -354,7 +354,6 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	 * switch away from it before attempting any exclusive accesses.
 	 */
 	cpu_switch_mm(mm->pgd, mm);
-	local_flush_bp_all();
 	enter_lazy_tlb(mm, current);
 	local_flush_tlb_all();
 
@@ -367,10 +366,9 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	current->active_mm = mm;
 	cpumask_set_cpu(cpu, mm_cpumask(mm));
 
-	cpu_init();
-
 	pr_debug("CPU%u: Booted secondary processor\n", cpu);
 
+	cpu_init();
 	preempt_disable();
 	trace_hardirqs_off();
 
